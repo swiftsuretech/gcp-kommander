@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Generate a new ssh key and export it as TF env variable
+ssh-keygen -q -t rsa -N '' -f keys/pega  <<<y >/dev/null 2>&1 
+export TF_VAR_ssh_username=$USER
+export TF_VAR_public_key="${TF_VAR_ssh_username}:$(< keys/pega.pub)"
+
+# Run the Terraform
+alias t=terraform
+cd infrastructure
+terraform fmt
+terraform validate
+terraform apply -auto-approve

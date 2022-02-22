@@ -1,0 +1,28 @@
+#!/bin/bash
+
+info () {
+  echo -e '\n\e[0;35m'$1'\e[0;37m\n'
+}
+
+# Install Packages
+info "Installing Packages"
+sudo yum install -y yum-utils
+sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum -y install epel-release
+
+# Disable firewalld
+info "Disabling the firewall"
+sudo systemctl stop firewalld > /dev/null 2>&1
+sudo systemctl disable firewalld > /dev/null 2>&1
+
+# Disable swap
+info "Disabling swap"
+sudo /usr/sbin/swapoff -a
+
+# Set SELinux to permissive
+info "Setting SELinux to Permissive"
+sudo setenforce 0
+sudo sed -i 's/enforcing/permisive/g' /etc/selinux/config

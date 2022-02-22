@@ -1,0 +1,67 @@
+export CLUSTER_NAME="pega-cluster"
+export CONTROL_PLANE_1_ADDRESS="10.0.0.20"
+export WORKER_1_ADDRESS="10.0.0.30"
+export WORKER_2_ADDRESS="10.0.0.31"
+export WORKER_3_ADDRESS="10.0.0.32"
+export SSH_USER="dswhitehouse"
+export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
+
+sudo systemctl restart docker
+sudo mv /tmp/dkp /usr/local/bin/dkp
+sudo chmod +x /usr/local/bin/dkp
+alias k=kubectl
+
+dkp create bootstrap
+
+kubectl create secret generic $CLUSTER_NAME-ssh-key --from-file=ssh-privatekey=/home/dswhitehouse/.ssh/pega
+kubectl label secret $CLUSTER_NAME-ssh-key clusterctl.cluster.x-k8s.io/move=
+
+cat <<EOF > preprovisioned_inventory.yaml
+---
+apiVersion: infrastructure.cluster.konvoy.d2iq.io/v1alpha1
+kind: PreprovisionedInventory
+metadata:
+  name: $CLUSTER_NAME-control-plane
+  namespace: default
+  labels:
+    cluster.x-k8s.io/cluster-name: $CLUSTER_NAME
+    clusterctl.cluster.x-k8s.io/move: ""
+spec:
+  hosts:
+    # Create as many of these as needed to match your infrastructure
+    - address: $CONTROL_PLANE_1_ADDRESS
+  sshConfig:
+    port: 22
+    # This is the username used to connect to your infrastructure. This user must be root or
+    # have the ability to use sudo without a password
+    user: $SSH_USER
+    privateKeyRef:
+      # This is the name of the secret you created in the previous step. It must exist in the same
+      # namespace as this inventory object.
+      name: $SSH_PRIVATE_KEY_SECRET_NAME
+      namespace: default
+---
+apiVersion: infrastructure.cluster.konvoy.d2iq.io/v1alpha1
+kind: PreprovisionedInventory
+metadata:
+  name: $CLUSTER_NAME-md-0
+  namespace: default
+  labels:
+    cluster.x-k8s.io/cluster-name: $CLUSTER_NAME
+    clusterctl.cluster.x-k8s.io/move: ""
+spec:
+  hosts:
+    - address: $WORKER_1_ADDRESS
+    - address: $WORKER_2_ADDRESS
+    - address: $WORKER_3_ADDRESS
+  sshConfig:
+    port: 22
+    user: $SSH_USER
+    privateKeyRef:
+      name: $SSH_PRIVATE_KEY_SECRET_NAME
+      namespace: default
+EOF
+
+envsubst < preprovisioned_inventory.yaml | kubectl apply -f -
+
+dkp create cluster preprovisioned --cluster-name ${CLUSTER_NAME} --control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
