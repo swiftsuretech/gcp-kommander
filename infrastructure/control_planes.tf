@@ -4,7 +4,7 @@ resource "google_compute_instance" "pega-control-plane" {
   deletion_protection = false
   enable_display      = false
   guest_accelerator   = []
-  hostname            = "bastioncontrolplane${count.index}.pega"
+  hostname            = "controlplane${count.index}.pega"
   labels = {
     "owner" = "david-whitehouse"
   }

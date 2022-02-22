@@ -4,7 +4,7 @@ resource "google_compute_instance" "pega-worker-node" {
   deletion_protection = false
   enable_display      = false
   guest_accelerator   = []
-  hostname            = "bastionworkernode${count.index}.pega"
+  hostname            = "workernode${count.index}.pega"
   labels = {
     "owner" = "david-whitehouse"
   }
