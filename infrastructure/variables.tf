@@ -15,7 +15,7 @@ variable "zone" {
 
 variable "worker_count" {
   type    = number
-  default = 1
+  default = 4
 }
 
 variable "controlplane_count" {
@@ -33,7 +33,8 @@ variable "private_key" {
 }
 
 variable "ssh_username" {
-  type = string
+  type    = string
+  default = "dswhitehouse"
 }
 
 variable "cluster_name" {

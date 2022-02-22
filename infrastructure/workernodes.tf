@@ -1,5 +1,5 @@
 resource "google_compute_instance" "pega-worker-node" {
-  count               = 3
+  count               = var.worker_count
   can_ip_forward      = false
   deletion_protection = false
   enable_display      = false

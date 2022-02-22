@@ -1,14 +1,19 @@
 export CLUSTER_NAME="pega-cluster"
 export CONTROL_PLANE_1_ADDRESS="10.0.0.20"
+export CONTROL_PLANE_2_ADDRESS="10.0.0.21"
+export CONTROL_PLANE_3_ADDRESS="10.0.0.22"
 export WORKER_1_ADDRESS="10.0.0.30"
 export WORKER_2_ADDRESS="10.0.0.31"
 export WORKER_3_ADDRESS="10.0.0.32"
+export WORKER_4_ADDRESS="10.0.0.33"
 export SSH_USER="dswhitehouse"
 export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
 
 sudo systemctl restart docker
 sudo mv /tmp/dkp /usr/local/bin/dkp
 sudo chmod +x /usr/local/bin/dkp
+sudo mv /tmp/kommander /usr/local/bin/kommander
+sudo chmod +x /usr/local/bin/kommander
 alias k=kubectl
 
 dkp create bootstrap
@@ -30,6 +35,8 @@ spec:
   hosts:
     # Create as many of these as needed to match your infrastructure
     - address: $CONTROL_PLANE_1_ADDRESS
+    - address: $CONTROL_PLANE_2_ADDRESS
+    - address: $CONTROL_PLANE_3_ADDRESS
   sshConfig:
     port: 22
     # This is the username used to connect to your infrastructure. This user must be root or
@@ -54,6 +61,7 @@ spec:
     - address: $WORKER_1_ADDRESS
     - address: $WORKER_2_ADDRESS
     - address: $WORKER_3_ADDRESS
+    - address: $WORKER_4_ADDRESS
   sshConfig:
     port: 22
     user: $SSH_USER

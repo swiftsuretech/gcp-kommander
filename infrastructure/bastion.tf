@@ -106,6 +106,17 @@ resource "google_compute_instance" "pega-bastion" {
     }
   }
 
+  provisioner "file" {
+    source      = "../binaries/kommander"
+    destination = "/tmp/kommander"
+    connection {
+      type        = "ssh"
+      user        = var.ssh_username
+      private_key = file(var.private_key)
+      host        = self.network_interface[0].access_config[0].nat_ip
+    }
+  }
+
   provisioner "remote-exec" {
     inline = [
       "chmod +x /tmp/script.sh",

@@ -60,7 +60,7 @@ resource "google_compute_firewall" "pega-internal" {
     "0.0.0.0/0",
   ]
   target_service_accounts = [
-    "dswhitehouse@konvoy-gcp-se.iam.gserviceaccount.com",
+    var.service_account,
   ]
   allow {
     protocol = "all"

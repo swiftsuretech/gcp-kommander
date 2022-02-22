@@ -1,5 +1,5 @@
 resource "google_compute_instance" "pega-control-plane" {
-  count               = 1
+  count               = var.controlplane_count
   can_ip_forward      = false
   deletion_protection = false
   enable_display      = false
