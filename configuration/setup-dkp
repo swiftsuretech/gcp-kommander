@@ -78,5 +78,13 @@ dkp create cluster preprovisioned \
 
 exit 0
 
+# Get the kubeconfig and transfer to the cluster
+dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
+dkp create bootstrap controllers --kubeconfig ${CLUSTER_NAME}.conf
+dkp move --to-kubeconfig ${CLUSTER_NAME}.conf
+export KUBECONFIG=$pwd/$CLUSTER_NAME.conf
+
+
 kommander install --init > kommander.yaml
 sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.50.25-10.0.50.50" kommander.yaml
+kommander install --config kommander.yaml
