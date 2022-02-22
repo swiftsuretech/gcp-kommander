@@ -1,3 +1,5 @@
+#!/bin/bash
+
 export CLUSTER_NAME="pega-cluster"
 export CONTROL_PLANE_1_ADDRESS="10.0.0.20"
 export CONTROL_PLANE_2_ADDRESS="10.0.0.21"
@@ -76,7 +78,14 @@ dkp create cluster preprovisioned \
 --cluster-name ${CLUSTER_NAME} \
 --control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
 
-exit 0
+
+#### Wait for nodes ####
+# Check our konvoy nodes
+echo "Waiting for all nodes to come up"
+while [ $(kubectl get nodes | grep Ready | wc -l) -lt 4 ]; do
+  echo "Waiting for all nodes to come up. Currently $(kubectl --kubeconfig=admin.conf get nodes | grep Ready | wc -l) of 4."
+  sleep 30
+done
 
 # Get the kubeconfig and transfer to the cluster
 dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
@@ -88,3 +97,18 @@ export KUBECONFIG=$pwd/$CLUSTER_NAME.conf
 kommander install --init > kommander.yaml
 sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.0.100-10.0.0.125" kommander.yaml
 kommander install --config kommander.yaml
+
+
+#### Wait for helm releases
+sleep 30
+declare -i COMPCOUNT=0
+declare -i COMPREADY=0
+while [[ $COMPREADY -lt $COMPCOUNT || $COMPCOUNT -lt 30 ]]; do
+  COMPCOUNT=$(kubectl get helmreleases -n kommander | wc -l)-1   
+  COMPREADY=$(kubectl get helmreleases -n kommander | grep True | wc -l )
+  echo "$COMPREADY of $COMPCOUNT have completed"
+  sleep 15
+done
+
+kubectl -n kommander get svc kommander-traefik -o go-template='https://{{with index .status.loadBalancer.ingress 0}}{{or .hostname .ip}}{{end}}/dkp/kommander/dashboard{{ "\n"}}'
+kubectl -n kommander get secret dkp-credentials -o go-template='Username: {{.data.username|base64decode}}{{ "\n"}}Password: {{.data.password|base64decode}}{{ "\n"}}'
