@@ -72,4 +72,11 @@ EOF
 
 envsubst < preprovisioned_inventory.yaml | kubectl apply -f -
 
-dkp create cluster preprovisioned --cluster-name ${CLUSTER_NAME} --control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
+dkp create cluster preprovisioned \
+--cluster-name ${CLUSTER_NAME} \
+--control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
+
+exit 0
+
+kommander install --init > kommander.yaml
+sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.50.25-10.0.50.50" kommander.yaml
