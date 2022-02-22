@@ -17,6 +17,12 @@ sudo systemctl enable docker
 sudo systemctl start docker
 sudo usermod -aG docker dswhitehouse
 
+# Install helm
+
+curl -LO https://get.helm.sh/helm-v3.8.0-linux-amd64.tar.gz
+tar -xvf helm-v3.8.0-linux-amd64.tar.gz 
+sudo mv linux-amd64/helm /usr/local/bin/helm
+
 # Install kubectl
 info "Installing kubectl"
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
