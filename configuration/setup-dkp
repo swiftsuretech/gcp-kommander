@@ -86,5 +86,5 @@ export KUBECONFIG=$pwd/$CLUSTER_NAME.conf
 
 
 kommander install --init > kommander.yaml
-sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.50.25-10.0.50.50" kommander.yaml
+sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.0.100-10.0.0.125" kommander.yaml
 kommander install --config kommander.yaml
