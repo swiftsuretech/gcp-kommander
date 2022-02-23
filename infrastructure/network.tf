@@ -26,7 +26,7 @@ resource "google_compute_firewall" "pega-internal" {
   depends_on = [google_compute_network.pega-network]
   disabled   = false
   name       = "pega-internal"
-  network    = "google_compute_network.pega-network.id"
+  network    = google_compute_network.pega-network.id
   priority   = 1000
   project    = "konvoy-gcp-se"
   source_ranges = [
