@@ -8,7 +8,7 @@ export WORKER_1_ADDRESS="10.0.0.30"
 export WORKER_2_ADDRESS="10.0.0.31"
 export WORKER_3_ADDRESS="10.0.0.32"
 export WORKER_4_ADDRESS="10.0.0.33"
-export SSH_USER="dswhitehouse"
+export SSH_USER=$USER
 export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
 
 sudo systemctl restart docker
@@ -20,7 +20,7 @@ alias k=kubectl
 
 dkp create bootstrap
 
-kubectl create secret generic $CLUSTER_NAME-ssh-key --from-file=ssh-privatekey=/home/dswhitehouse/.ssh/pega
+kubectl create secret generic $CLUSTER_NAME-ssh-key --from-file=ssh-privatekey=/home/$USER/.ssh/pega
 kubectl label secret $CLUSTER_NAME-ssh-key clusterctl.cluster.x-k8s.io/move=
 
 cat <<EOF > preprovisioned_inventory.yaml
@@ -78,36 +78,43 @@ dkp create cluster preprovisioned \
 --cluster-name ${CLUSTER_NAME} \
 --control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
 
-
 #### Wait for nodes ####
-# Check our konvoy nodes
 echo "Waiting for all nodes to come up"
-while [ $(kubectl get nodes | grep Ready | wc -l) -lt 4 ]; do
-  echo "Waiting for all nodes to come up. Currently $(kubectl --kubeconfig=admin.conf get nodes | grep Ready | wc -l) of 4."
+while [ $(kubectl get nodes | grep Ready | wc -l) -lt 1 ]; do
+  echo "Waiting for the control plane"
   sleep 30
 done
 
 # Get the kubeconfig and transfer to the cluster
 dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
+# Check our konvoy nodes
+sleep 30
+echo "Waiting for all nodes to come up"
+while [ $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) -lt  $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)]; do
+  echo "Waiting for all nodes to come up. Currently $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) of $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)."
+  sleep 30
+done
+echo "All nodes are up"
+sleep 30
+
+echo "Transferring bootstrap controllers"
 dkp create bootstrap controllers --kubeconfig ${CLUSTER_NAME}.conf
 dkp move --to-kubeconfig ${CLUSTER_NAME}.conf
 export KUBECONFIG=$pwd/$CLUSTER_NAME.conf
 
-
+sleep 15
 kommander install --init > kommander.yaml
 sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.0.100-10.0.0.125" kommander.yaml
 kommander install --config kommander.yaml
-
 
 #### Wait for helm releases
 sleep 30
 declare -i COMPCOUNT=0
 declare -i COMPREADY=0
 while [[ $COMPREADY -lt $COMPCOUNT || $COMPCOUNT -lt 30 ]]; do
-  COMPCOUNT=$(kubectl get helmreleases -n kommander | wc -l)-1   
-  COMPREADY=$(kubectl get helmreleases -n kommander | grep True | wc -l )
-  echo "$COMPREADY of $COMPCOUNT have completed"
-  sleep 15
+  clear
+  kubectl get helmreleases -n kommander 
+  sleep 5
 done
 
 kubectl -n kommander get svc kommander-traefik -o go-template='https://{{with index .status.loadBalancer.ingress 0}}{{or .hostname .ip}}{{end}}/dkp/kommander/dashboard{{ "\n"}}'
