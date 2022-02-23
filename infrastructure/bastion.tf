@@ -5,7 +5,7 @@ resource "google_compute_instance" "pega-bastion" {
   guest_accelerator   = []
   hostname            = "bastionnetwork.pega"
   labels = {
-    "owner" = "david-whitehouse"
+    "owner" = var.owner
   }
   machine_type = "e2-standard-4"
   metadata = {
@@ -41,7 +41,7 @@ resource "google_compute_instance" "pega-bastion" {
     network_ip         = "10.0.0.10"
     queue_count        = 0
     stack_type         = "IPV4_ONLY"
-    subnetwork         = google_compute_subnetwork.pega.id
+    subnetwork         = google_compute_subnetwork.pega-subnet.id
     subnetwork_project = "konvoy-gcp-se"
 
     access_config {

@@ -6,7 +6,7 @@ resource "google_compute_instance" "pega-control-plane" {
   guest_accelerator   = []
   hostname            = "controlplane${count.index}.pega"
   labels = {
-    "owner" = "david-whitehouse"
+    "owner" = var.owner
   }
   machine_type = "e2-standard-4"
   metadata = {
@@ -42,7 +42,7 @@ resource "google_compute_instance" "pega-control-plane" {
     network_ip         = "10.0.0.2${count.index}"
     queue_count        = 0
     stack_type         = "IPV4_ONLY"
-    subnetwork         = google_compute_subnetwork.pega.id
+    subnetwork         = google_compute_subnetwork.pega-subnet.id
     subnetwork_project = "konvoy-gcp-se"
 
     access_config {
