@@ -38,7 +38,7 @@ resource "google_compute_instance" "pega-worker-node" {
   }
 
   network_interface {
-    network            = "https://www.googleapis.com/compute/v1/projects/konvoy-gcp-se/global/networks/pega-network"
+    network            = google_compute_network.pega-network.id
     network_ip         = "10.0.0.3${count.index}"
     queue_count        = 0
     stack_type         = "IPV4_ONLY"

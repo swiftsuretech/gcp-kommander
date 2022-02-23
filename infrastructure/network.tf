@@ -10,7 +10,7 @@ resource "google_compute_network" "pega-network" {
 resource "google_compute_subnetwork" "pega-subnet" {
   ip_cidr_range              = "10.0.0.0/16"
   name                       = "pega-subnet"
-  network                    = "google_compute_network.pega-network.id"
+  network                    = google_compute_network.pega-network.id
   private_ip_google_access   = false
   private_ipv6_google_access = "DISABLE_GOOGLE_ACCESS"
   project                    = "konvoy-gcp-se"
@@ -26,7 +26,7 @@ resource "google_compute_firewall" "pega-internal" {
   depends_on = [google_compute_network.pega-network]
   disabled   = false
   name       = "pega-internal"
-  network    = "https://www.googleapis.com/compute/v1/projects/konvoy-gcp-se/global/networks/pega-network"
+  network    = "google_compute_network.pega-network.id"
   priority   = 1000
   project    = "konvoy-gcp-se"
   source_ranges = [
