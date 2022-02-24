@@ -100,7 +100,7 @@ sleep 30
 echo "Transferring bootstrap controllers"
 dkp create bootstrap controllers --kubeconfig ${CLUSTER_NAME}.conf
 dkp move --to-kubeconfig ${CLUSTER_NAME}.conf
-export KUBECONFIG=$pwd/$CLUSTER_NAME.conf
+export KUBECONFIG=$PWD/$CLUSTER_NAME.conf
 
 sleep 15
 kommander install --init > kommander.yaml
