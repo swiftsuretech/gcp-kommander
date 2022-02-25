@@ -45,7 +45,6 @@ resource "google_compute_instance" "pega-bastion" {
     subnetwork_project = "konvoy-gcp-se"
 
     access_config {
-
       network_tier = "PREMIUM"
     }
   }
@@ -96,7 +95,7 @@ resource "google_compute_instance" "pega-bastion" {
   }
 
   provisioner "file" {
-    source      = "../binaries/dkp"
+    source      = "../binaries/dkp.tar.gz"
     destination = "/tmp/dkp"
     connection {
       type        = "ssh"
@@ -107,7 +106,7 @@ resource "google_compute_instance" "pega-bastion" {
   }
 
   provisioner "file" {
-    source      = "../binaries/kommander"
+    source      = "../binaries/kommander.tar.gz"
     destination = "/tmp/kommander"
     connection {
       type        = "ssh"
