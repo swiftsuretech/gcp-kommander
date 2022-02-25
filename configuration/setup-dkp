@@ -12,6 +12,8 @@ export SSH_USER=$USER
 export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
 
 sudo systemctl restart docker
+sudo tar -xvf dkp.tar.gz
+sudo tar -xvf kommander.tar.gz
 sudo mv /tmp/dkp /usr/local/bin/dkp
 sudo chmod +x /usr/local/bin/dkp
 sudo mv /tmp/kommander /usr/local/bin/kommander
@@ -76,7 +78,14 @@ envsubst < preprovisioned_inventory.yaml | kubectl apply -f -
 
 dkp create cluster preprovisioned \
 --cluster-name ${CLUSTER_NAME} \
---control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS
+--control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS \
+--dry-run \
+-o yaml > $CLUSTER_NAME.yaml
+
+sed -i 's/cloud-provider\:\ \"\"/cloud-provider\:\ \"gcp\"/' $CLUSTER_NAME.yaml
+sed -i 's/konvoy.d2iq.io\/provider\:\ preprovisioned/konvoy.d2iq.io\/provider\:\ gcp/' $CLUSTER_NAME.yaml
+
+exit 0
 
 #### Wait for nodes ####
 echo "Waiting for all nodes to come up"
@@ -89,7 +98,7 @@ done
 dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
 # Check our konvoy nodes
 sleep 30
-echo "Waiting for all nodes to come up"
+echo "Waiting for all nodes to come up"k
 while [ $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) -lt  $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)]; do
   echo "Waiting for all nodes to come up. Currently $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) of $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)."
   sleep 30
@@ -101,6 +110,8 @@ echo "Transferring bootstrap controllers"
 dkp create bootstrap controllers --kubeconfig ${CLUSTER_NAME}.conf
 dkp move --to-kubeconfig ${CLUSTER_NAME}.conf
 export KUBECONFIG=$PWD/$CLUSTER_NAME.conf
+
+
 
 sleep 15
 kommander install --init > kommander.yaml
