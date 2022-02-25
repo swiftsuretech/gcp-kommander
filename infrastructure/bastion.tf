@@ -95,7 +95,7 @@ resource "google_compute_instance" "pega-bastion" {
   }
 
   provisioner "file" {
-    source      = "../binaries/dkp.tar.gz"
+    source      = "../binaries/dkp"
     destination = "/tmp/dkp"
     connection {
       type        = "ssh"
@@ -106,7 +106,7 @@ resource "google_compute_instance" "pega-bastion" {
   }
 
   provisioner "file" {
-    source      = "../binaries/kommander.tar.gz"
+    source      = "../binaries/kommander"
     destination = "/tmp/kommander"
     connection {
       type        = "ssh"

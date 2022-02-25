@@ -12,8 +12,8 @@ export SSH_USER=$USER
 export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
 
 sudo systemctl restart docker
-sudo tar -xvf dkp.tar.gz
-sudo tar -xvf kommander.tar.gz
+#sudo tar -xvf dkp.tar.gz
+#sudo tar -xvf kommander.tar.gz
 sudo mv /tmp/dkp /usr/local/bin/dkp
 sudo chmod +x /usr/local/bin/dkp
 sudo mv /tmp/kommander /usr/local/bin/kommander
@@ -82,9 +82,10 @@ dkp create cluster preprovisioned \
 --dry-run \
 -o yaml > $CLUSTER_NAME.yaml
 
-sed -i 's/cloud-provider\:\ \"\"/cloud-provider\:\ \"gcp\"/' $CLUSTER_NAME.yaml
+sed -i 's/cloud-provider\:\ \"\"/cloud-provider\:\ \"gce\"/' $CLUSTER_NAME.yaml
 sed -i 's/konvoy.d2iq.io\/provider\:\ preprovisioned/konvoy.d2iq.io\/provider\:\ gcp/' $CLUSTER_NAME.yaml
 
+kubectl apply -f $CLUSTER_NAME
 exit 0
 
 #### Wait for nodes ####
