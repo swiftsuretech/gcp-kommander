@@ -26,7 +26,7 @@ rm helm-v3.8.0-linux-amd64.tar.gz
 sudo mv linux-amd64/helm /usr/local/bin/helm
 sudo chmod +x /usr/local/bin/helm
 chmod +x stern_linux_amd64
-sudo mv stern
+sudo mv stern_linux_amd64 /usr/local/bin/stern
 sudo rm -rf linux-amd64
 
 # Install kubectl
