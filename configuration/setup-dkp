@@ -88,7 +88,7 @@ dkp create cluster preprovisioned \
 
 
 
-kubectl apply -f $CLUSTER_NAME
+kubectl apply -f $CLUSTER_NAME.yaml
 exit 0
 
 #### Wait for nodes ####
@@ -117,22 +117,16 @@ export KUBECONFIG=$PWD/$CLUSTER_NAME.conf
 
 # Install Load Balancer
 kubectl get configmap kube-proxy -n kube-system -o yaml | \
-sed -e "s/strictARP: false/strictARP: true/" | \
-kubectl apply -f - -n kube-system
+sed -e "s/strictARP: false/strictARP: true/" | kubectl apply -f - -n kube-system
 kubectl create configmap --namespace kube-system kubevip --from-literal range-global=10.0.0.100-10.0.0.110
-kubectl apply -f https://kube-vip.io/manifests/controller.yaml
-kubectl apply -f https://kube-vip.io/manifests/rbac.yaml
+kubectl apply -f https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
 
 # Build and apply kubevip manifest
-
-alias kube-vip="docker run --network host --rm plndr/kube-vip:v0.3.5"
-kube-vip manifest daemonset --services --taint --inCluster --arp --interface eth0 --leaderElection  --controlplane | kubectl apply -f -
-
-
-
-
-
-
+export VIP=10.0.0.20
+export INTERFACE=eth0
+export KVVERSION=v0.4.2
+alias kube-vip="docker run --network host --rm plndr/kube-vip:v0.4.2"
+kube-vip manifest daemonset --interface eth0 --address $VIP --inCluster --taint --controlplane --services --arp --leaderElection kubectl apply -f -
 ## Kommander Install
 
 sleep 15
