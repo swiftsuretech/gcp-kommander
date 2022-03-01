@@ -12,8 +12,6 @@ export SSH_USER=$USER
 export SSH_PRIVATE_KEY_SECRET_NAME="$CLUSTER_NAME-ssh-key"
 
 sudo systemctl restart docker
-#sudo tar -xvf dkp.tar.gz
-#sudo tar -xvf kommander.tar.gz
 sudo mv /tmp/dkp /usr/local/bin/dkp
 sudo chmod +x /usr/local/bin/dkp
 sudo mv /tmp/kommander /usr/local/bin/kommander
@@ -78,60 +76,39 @@ envsubst < preprovisioned_inventory.yaml | kubectl apply -f -
 
 dkp create cluster preprovisioned \
 --cluster-name ${CLUSTER_NAME} \
---control-plane-endpoint-host $CONTROL_PLANE_1_ADDRESS \
+--control-plane-endpoint-host 10.0.0.20 \
 --dry-run \
 -o yaml > $CLUSTER_NAME.yaml
 
-# sed -i 's/cloud-provider\:\ \"\"/cloud-provider\:\ \"gce\"/' $CLUSTER_NAME.yaml
-# sed -i 's/konvoy.d2iq.io\/provider\:\ preprovisioned/konvoy.d2iq.io\/provider\:\ gcp/' $CLUSTER_NAME.yaml
-
-
-
-
 kubectl apply -f $CLUSTER_NAME.yaml
-exit 0
 
 #### Wait for nodes ####
-echo "Waiting for all nodes to come up"
-while [ $(kubectl get nodes | grep Ready | wc -l) -lt 1 ]; do
-  echo "Waiting for the control plane"
-  sleep 30
-done
-
-# Get the kubeconfig and transfer to the cluster
-dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
 # Check our konvoy nodes
-sleep 30
-echo "Waiting for all nodes to come up"k
-while [ $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) -lt  $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)]; do
-  echo "Waiting for all nodes to come up. Currently $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | grep Ready | wc -l) of $(kubectl get nodes --kubeconfig ${CLUSTER_NAME}.conf | wc -l)."
+
+while [ $(kubectl get machine | grep -v Running | wc -l) -gt 1 ]; do
+  clear
+  echo "Waiting for all nodes to come up. Currently $(kubectl get machine | grep Running | wc -l)"
+  kubectl get machine
   sleep 30
 done
 echo "All nodes are up"
-sleep 30
+
+dkp get kubeconfig -c ${CLUSTER_NAME} > ${CLUSTER_NAME}.conf
 
 echo "Transferring bootstrap controllers"
 dkp create bootstrap controllers --kubeconfig ${CLUSTER_NAME}.conf
 dkp move --to-kubeconfig ${CLUSTER_NAME}.conf
 export KUBECONFIG=$PWD/$CLUSTER_NAME.conf
 
+
 # Install Load Balancer
-kubectl get configmap kube-proxy -n kube-system -o yaml | \
-sed -e "s/strictARP: false/strictARP: true/" | kubectl apply -f - -n kube-system
-kubectl create configmap --namespace kube-system kubevip --from-literal range-global=10.0.0.100-10.0.0.110
+
 kubectl apply -f https://raw.githubusercontent.com/kube-vip/kube-vip-cloud-provider/main/manifest/kube-vip-cloud-controller.yaml
+kubectl create configmap -n kube-system kubevip --from-literal range-global=10.0.0.200-10.0.0.210
 
-# Build and apply kubevip manifest
-export VIP=10.0.0.20
-export INTERFACE=eth0
-export KVVERSION=v0.4.2
-alias kube-vip="docker run --network host --rm plndr/kube-vip:v0.4.2"
-kube-vip manifest daemonset --interface eth0 --address $VIP --inCluster --taint --controlplane --services --arp --leaderElection kubectl apply -f -
 ## Kommander Install
-
 sleep 15
 kommander install --init > kommander.yaml
-sed -i "4i\ \ metallb:\n    values: |\n      configInline:\n        address-pools:\n          - name: default\n            protocol: layer2\n            addresses:\n              - 10.0.0.100-10.0.0.125" kommander.yaml
 kommander install --config kommander.yaml
 
 #### Wait for helm releases
@@ -140,8 +117,10 @@ declare -i COMPCOUNT=0
 declare -i COMPREADY=0
 while [[ $COMPREADY -lt $COMPCOUNT || $COMPCOUNT -lt 30 ]]; do
   clear
+  COMPCOUNT=$(kubectl get helmreleases -n kommander | wc -l)-1   
+  COMPREADY=$(kubectl get helmreleases -n kommander | grep True | wc -l )
   kubectl get helmreleases -n kommander 
-  sleep 5
+  sleep 10
 done
 
 kubectl -n kommander get svc kommander-traefik -o go-template='https://{{with index .status.loadBalancer.ingress 0}}{{or .hostname .ip}}{{end}}/dkp/kommander/dashboard{{ "\n"}}'
